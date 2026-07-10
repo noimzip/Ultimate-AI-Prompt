@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カレンダー作成ダッシュボード</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; }
+ .card { background: #fff; padding: 25px; border-radius: 8px; max-width: 550px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  h2 { color: #1a73e8; margin-top: 0; }
+ .info-box { background: #e8f0fe; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+ .info-box label { font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 3px; color: #1a73e8; }
+ .info-box input,.info-box textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
+ .event-list { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; max-height: 350px; overflow-y: auto; border: 1px solid #ddd; }
+ .event-item { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+ .event-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+ .event-item input,.event-item textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 8px; font-family: inherit; }
+ .time-group { display: flex; gap: 10px; margin-bottom: 8px; }
+ .time-group input { width: 50%; margin-bottom: 0; }
+ .btn-add { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-bottom: 20px; font-size: 0.9em; font-weight: bold; }
+ .btn-delete { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; }
+ .btn-submit { display: block; width: 100%; background-color: #1a73e8; color: #fff; padding: 14px; border: none; border-radius: 4px; font-weight: bold; font-size: 1.1em; cursor: pointer; text-align: center; }
+ .btn-submit:hover { background-color: #1557b0; }
+ .btn-calendar { display: inline-block; margin-top: 15px; background-color: #34a853; color: #fff; padding: 12px 24px; border: none; border-radius: 4px; font-weight: bold; text-decoration: none; cursor: pointer; }
+</style>
+</head>
+<body>
+
+  <div class="card" id="editor-view">
+    <h2>カレンダーと予定の編集</h2>
+    <p style="font-size: 0.9em; color: #555;">AIが抽出した内容です。間違いがあれば自由に修正・追加・削除してください。</p>
+    
+    <div class="info-box">
+      <label>カレンダー名</label>
+      <input type="text" id="calNameInput">
+      <label>備考</label>
+      <textarea id="calDescInput" rows="2"></textarea>
+    </div>
+
+    <div class="event-list" id="eventsContainer"></div>
+
+    <button class="btn-add" onclick="addEvent()">+ 新しい予定を追加</button>
+
+    <form action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="handleFormSubmit()">
+      <input type="hidden" name="payload" id="payloadInput">
+      <button type="submit" class="btn-submit">承認して作成を開始する</button>
+    </form>
+    <p style="font-size: 0.8em; color: #666; margin-top: 15px;">※クリックすると新しいタブで処理が始まります。</p>
+  </div>
+
+  <div class="card" id="success-view" style="display: none; text-align: center;">
+    <h2>処理を開始しました</h2>
+    <p style="color: #d93025; font-size: 0.95em; text-align: left; background: #fce8e6; padding: 15px; border-radius: 4px;">
+    <strong>⚠️ 初回アクセスのユーザーへ</strong><br>
+    別タブで「Googleの承認画面」が出た場合は許可してください。<br>
+    許可した直後はセキュリティの都合でデータが送られません。そのタブを閉じ、<strong>下のボタンでもう一度処理を実行してください。</strong>
+    </p>
+    
+    <button onclick="resetView()" style="margin-top: 10px; padding: 12px 24px; background: #1a73e8; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1em;">もう一度作成ボタンを押す</button>
+
+    <hr style="border: 0; border-top: 1px solid #ddd; margin: 25px 0;">
+    <p style="font-size: 0.9em;">別タブの画面に「作成完了」と表示され、この画面に戻ってきたら、以下のボタンからカレンダーを確認できます。</p>
+    <a href="https://calendar.google.com/calendar/r" target="_blank" class="btn-calendar">Googleカレンダーを開く</a>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // Geminiが抽出したデータ
+    // ----------------------------------------------------
+    let extractedData = {
+      // ここに抽出したカレンダー名、説明、予定の配列を入れてください
+    };
+
+    // 初期データのUI反映
+    document.getElementById('calNameInput').value = extractedData.calName;
+    document.getElementById('calDescInput').value = extractedData.desc;
+
+    // 予定の描画関数
+    function renderEvents() {
+      const container = document.getElementById('eventsContainer');
+      container.innerHTML = '';
+      
+      extractedData.events.forEach((evt, index) => {
+        container.innerHTML += `
+          <div class="event-item">
+            <input type="text" id="title-${index}" value="${evt.title}" placeholder="予定のタイトル">
+            <div class="time-group">
+              <input type="datetime-local" id="start-${index}" value="${evt.start}">
+              <input type="datetime-local" id="end-${index}" value="${evt.end}">
+            </div>
+            <textarea id="desc-${index}" placeholder="予定の備考" rows="2">${evt.description || ""}</textarea>
+            <button type="button" class="btn-delete" onclick="deleteEvent(${index})">この予定を削除</button>
+          </div>
+        `;
+      });
+    }
+
+    renderEvents();
+
+    // 予定の追加処理
+    function addEvent() {
+      extractedData.events.push({ title: "", start: "", end: "", description: "" });
+      renderEvents();
+      // 追加後に一番下までスクロール
+      const container = document.getElementById('eventsContainer');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // 予定の削除処理
+    function deleteEvent(index) {
+      extractedData.events.splice(index, 1);
+      renderEvents();
+    }
+
+    // 送信時のデータ回収処理
+    function handleFormSubmit() {
+      extractedData.calName = document.getElementById('calNameInput').value;
+      extractedData.desc = document.getElementById('calDescInput').value;
+      
+      extractedData.events.forEach((evt, index) => {
+        evt.title = document.getElementById(`title-${index}`).value;
+        evt.start = document.getElementById(`start-${index}`).value;
+        evt.end = document.getElementById(`end-${index}`).value;
+        evt.description = document.getElementById(`desc-${index}`).value;
+      });
+
+      document.getElementById('payloadInput').value = JSON.stringify(extractedData);
+
+      setTimeout(() => {
+        document.getElementById('editor-view').style.display = 'none';
+        document.getElementById('success-view').style.display = 'block';
+      }, 500);
+    }
+
+    // 画面のリセット処理（初回認証時用）
+    function resetView() {
+      document.getElementById('editor-view').style.display = 'block';
+      document.getElementById('success-view').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

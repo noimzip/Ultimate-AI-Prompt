@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gmail自動化ダッシュボード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
+
+  :root {
+    --bg-primary: #090c14;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2236;
+    --accent: #f43f5e;
+    --accent-hover: #e11d48;
+    --accent-light: rgba(244, 63, 94, 0.12);
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border: #1e293b;
+    --border-focus: #f43f5e;
+    --card-bg: rgba(17, 24, 39, 0.75);
+    --danger: #ef4444;
+    --success: #10b981;
+    --info: #6366f1;
+    --warning: #f59e0b;
+    --label-color: #8b5cf6;
+    --forward-color: #3b82f6;
+    --archive-color: #6b7280;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-main);
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 1000px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--accent-light);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+  }
+
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.5em;
+  }
+
+  .subtitle {
+    font-size: 0.88em;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+    padding-left: 52px;
+  }
+
+  /* Action Type Selector */
+  .action-selector {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 22px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82em;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(244,63,94,0.3);
+  }
+
+  .action-btn:hover:not(.active) {
+    color: var(--text-main);
+    background: rgba(255,255,255,0.04);
+  }
+
+  /* Stats Bar */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 0.72em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+
+  /* Rules List */
+  .rules-container {
+    margin-bottom: 20px;
+  }
+
+  .rule-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 14px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .rule-card:hover {
+    border-color: rgba(244, 63, 94, 0.3);
+  }
+
+  .rule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .rule-name-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rule-badge {
+    font-size: 0.7em;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .rule-badge-filter {
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--accent);
+  }
+
+  .rule-badge-label {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--label-color);
+  }
+
+  .rule-badge-forward {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--forward-color);
+  }
+
+  .rule-name-input {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    font-size: 1em;
+    font-weight: 600;
+    outline: none;
+    width: 200px;
+  }
+
+  .rule-name-input:focus {
+    border-bottom: 1px solid var(--accent);
+  }
+
+  .rule-controls {
+    display: flex;
+    gap: 6px;
+  }
+
+  .btn-icon {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-icon:hover {
+    color: var(--text-main);
+    border-color: var(--text-muted);
+  }
+
+  .btn-icon.danger:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  /* Condition & Action Layout */
+  .rule-body {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .rule-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 30px;
+    font-size: 1.4em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .condition-box, .action-box {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .box-title {
+    font-size: 0.72em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .box-title.condition { color: var(--warning); }
+  .box-title.action { color: var(--success); }
+
+  .field-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .field-label {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 65px;
+    text-align: right;
+  }
+
+  .field-input {
+    flex: 1;
+    background: rgba(9, 12, 20, 0.5);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.85em;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-input:focus {
+    border-color: var(--border-focus);
+  }
+
+  .field-select {
+    flex: 1;
+    background: rgba(9, 12, 20, 0.5);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.85em;
+    outline: none;
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .checkbox-row input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+  }
+
+  .checkbox-row label {
+    font-size: 0.82em;
+    color: var(--text-muted);
+  }
+
+  .conditional-field {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Add Rule Button */
+  .btn-add-rule {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed rgba(244, 63, 94, 0.4);
+    color: var(--accent);
+    padding: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.88em;
+    font-weight: 600;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+  }
+
+  .btn-add-rule:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  /* Submit */
+  .submit-area {
+    display: flex;
+    gap: 12px;
+  }
+
+  .form-container { flex: 1; }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(244, 63, 94, 0.25);
+  }
+
+  .btn-submit:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.35);
+  }
+
+  /* Success View */
+  .success-view {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .success-icon { font-size: 3em; margin-bottom: 16px; }
+
+  .success-view h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.4em;
+    margin-bottom: 12px;
+  }
+
+  .success-view p {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-bottom: 20px;
+  }
+
+  .auth-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: left;
+    font-size: 0.88em;
+    color: var(--warning);
+    margin-bottom: 20px;
+  }
+
+  .btn-retry, .btn-open {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    text-decoration: none;
+    margin: 6px;
+  }
+
+  .btn-retry { background: var(--accent); color: #fff; }
+  .btn-open { background: var(--info); color: #fff; }
+
+  @media (max-width: 800px) {
+    .rule-body {
+      grid-template-columns: 1fr;
+    }
+    .rule-arrow {
+      padding-top: 0;
+      transform: rotate(90deg);
+    }
+    .stats-bar { flex-direction: column; }
+    .container { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">⚡</div>
+      <h2>Gmail自動化ダッシュボード</h2>
+    </div>
+    <div class="subtitle">メールの自動振り分け・ラベル付け・転送ルールを設定してください。</div>
+
+    <!-- Action Selector -->
+    <div class="action-selector">
+      <button class="action-btn active" onclick="switchAction('create_gmail_filter')">フィルター作成</button>
+      <button class="action-btn" onclick="switchAction('apply_gmail_labels')">ラベル適用</button>
+      <button class="action-btn" onclick="switchAction('setup_auto_forward')">自動転送</button>
+    </div>
+
+    <!-- Editor View -->
+    <div id="editor-view">
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value" id="ruleCountStat">0</div>
+          <div class="stat-label">ルール数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="labelCountStat">0</div>
+          <div class="stat-label">ラベル操作</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="forwardCountStat">0</div>
+          <div class="stat-label">転送設定</div>
+        </div>
+      </div>
+
+      <!-- Rules -->
+      <div class="rules-container" id="rulesContainer"></div>
+
+      <button class="btn-add-rule" onclick="addRule()">+ 新しいルールを追加</button>
+
+      <!-- Submit -->
+      <div class="submit-area">
+        <form class="form-container" action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="handleFormSubmit()">
+          <input type="hidden" name="payload" id="payloadInput">
+          <button type="submit" class="btn-submit" id="submitBtn">ルールを実行する</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Success View -->
+    <div class="success-view" id="success-view">
+      <div class="success-icon">✅</div>
+      <h3>処理を開始しました</h3>
+      <div class="auth-warning">
+        <strong>⚠️ 初回アクセスの場合</strong><br>
+        別タブでGoogleの承認画面が表示されたら許可してください。許可直後はデータが送られないため、タブを閉じて下のボタンで再実行してください。
+      </div>
+      <button class="btn-retry" onclick="resetView()">もう一度実行する</button>
+      <a href="https://mail.google.com/mail/u/0/#settings/filters" target="_blank" class="btn-open">Gmailフィルター設定を開く</a>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // Geminiが抽出・生成するGmail自動化データ
+    // ----------------------------------------------------
+    let extractedData = {
+      action: "create_gmail_filter",
+      rules: [
+        {
+          id: "rule-1",
+          name: "サンプルルール",
+          condition: {
+            from: "",
+            to: "",
+            subject: "",
+            keyword: "",
+            hasAttachment: false
+          },
+          actionType: "addLabel",
+          labelName: "",
+          forwardTo: ""
+        }
+      ]
+    };
+
+    let ruleIdCounter = 1;
+
+    // --- Action Switch ---
+    function switchAction(action) {
+      extractedData.action = action;
+      document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      const submitBtn = document.getElementById('submitBtn');
+      switch(action) {
+        case 'create_gmail_filter':
+          submitBtn.textContent = 'フィルターを作成する';
+          break;
+        case 'apply_gmail_labels':
+          submitBtn.textContent = 'ラベルを適用する';
+          break;
+        case 'setup_auto_forward':
+          submitBtn.textContent = '自動転送を設定する';
+          break;
+      }
+
+      renderRules();
+    }
+
+    // --- Render Rules ---
+    function renderRules() {
+      const container = document.getElementById('rulesContainer');
+      container.innerHTML = '';
+
+      extractedData.rules.forEach((rule, i) => {
+        const actionBadge = getActionBadge(rule.actionType);
+        const showLabel = rule.actionType === 'addLabel' || rule.actionType === 'labelAndArchive';
+        const showForward = rule.actionType === 'forward';
+
+        container.innerHTML += `
+          <div class="rule-card">
+            <div class="rule-header">
+              <div class="rule-name-group">
+                <span class="rule-badge ${actionBadge.class}">${actionBadge.text}</span>
+                <input type="text" class="rule-name-input" value="${rule.name}" oninput="updateRule(${i}, 'name', this.value)" placeholder="ルール名">
+              </div>
+              <div class="rule-controls">
+                <button class="btn-icon danger" onclick="deleteRule(${i})" title="削除">×</button>
+              </div>
+            </div>
+
+            <div class="rule-body">
+              <!-- Conditions -->
+              <div class="condition-box">
+                <div class="box-title condition">📥 条件</div>
+                <div class="field-row">
+                  <span class="field-label">From:</span>
+                  <input type="text" class="field-input" value="${rule.condition.from}" oninput="updateCondition(${i}, 'from', this.value)" placeholder="送信者アドレスまたは名前">
+                </div>
+                <div class="field-row">
+                  <span class="field-label">To:</span>
+                  <input type="text" class="field-input" value="${rule.condition.to}" oninput="updateCondition(${i}, 'to', this.value)" placeholder="受信者アドレス">
+                </div>
+                <div class="field-row">
+                  <span class="field-label">件名:</span>
+                  <input type="text" class="field-input" value="${rule.condition.subject}" oninput="updateCondition(${i}, 'subject', this.value)" placeholder="件名のキーワード">
+                </div>
+                <div class="field-row">
+                  <span class="field-label">本文:</span>
+                  <input type="text" class="field-input" value="${rule.condition.keyword}" oninput="updateCondition(${i}, 'keyword', this.value)" placeholder="本文のキーワード">
+                </div>
+                <div class="checkbox-row">
+                  <input type="checkbox" id="attach-${i}" ${rule.condition.hasAttachment ? 'checked' : ''} onchange="updateCondition(${i}, 'hasAttachment', this.checked)">
+                  <label for="attach-${i}">添付ファイルあり</label>
+                </div>
+              </div>
+
+              <!-- Arrow -->
+              <div class="rule-arrow">→</div>
+
+              <!-- Actions -->
+              <div class="action-box">
+                <div class="box-title action">⚡ アクション</div>
+                <div class="field-row">
+                  <span class="field-label">種別:</span>
+                  <select class="field-select" onchange="updateRule(${i}, 'actionType', this.value); renderRules();">
+                    <option value="addLabel" ${rule.actionType === 'addLabel' ? 'selected' : ''}>ラベル付け</option>
+                    <option value="forward" ${rule.actionType === 'forward' ? 'selected' : ''}>転送</option>
+                    <option value="labelAndArchive" ${rule.actionType === 'labelAndArchive' ? 'selected' : ''}>ラベル+アーカイブ</option>
+                    <option value="archive" ${rule.actionType === 'archive' ? 'selected' : ''}>アーカイブ</option>
+                  </select>
+                </div>
+                ${showLabel ? `
+                <div class="conditional-field">
+                  <div class="field-row">
+                    <span class="field-label">ラベル:</span>
+                    <input type="text" class="field-input" value="${rule.labelName}" oninput="updateRule(${i}, 'labelName', this.value)" placeholder="例: 仕事/プロジェクトA">
+                  </div>
+                </div>
+                ` : ''}
+                ${showForward ? `
+                <div class="conditional-field">
+                  <div class="field-row">
+                    <span class="field-label">転送先:</span>
+                    <input type="email" class="field-input" value="${rule.forwardTo}" oninput="updateRule(${i}, 'forwardTo', this.value)" placeholder="例: forward@example.com">
+                  </div>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      updateStats();
+    }
+
+    function getActionBadge(actionType) {
+      switch(actionType) {
+        case 'addLabel': return { text: 'ラベル', class: 'rule-badge-label' };
+        case 'forward': return { text: '転送', class: 'rule-badge-forward' };
+        case 'labelAndArchive': return { text: 'ラベル+保存', class: 'rule-badge-label' };
+        case 'archive': return { text: 'アーカイブ', class: 'rule-badge-filter' };
+        default: return { text: 'フィルター', class: 'rule-badge-filter' };
+      }
+    }
+
+    function updateRule(index, field, value) {
+      extractedData.rules[index][field] = value;
+    }
+
+    function updateCondition(index, field, value) {
+      extractedData.rules[index].condition[field] = value;
+    }
+
+    function addRule() {
+      ruleIdCounter++;
+      extractedData.rules.push({
+        id: "rule-" + ruleIdCounter,
+        name: "新しいルール",
+        condition: {
+          from: "",
+          to: "",
+          subject: "",
+          keyword: "",
+          hasAttachment: false
+        },
+        actionType: "addLabel",
+        labelName: "",
+        forwardTo: ""
+      });
+      renderRules();
+    }
+
+    function deleteRule(index) {
+      if (extractedData.rules.length <= 1) {
+        alert("最低1つのルールが必要です。");
+        return;
+      }
+      extractedData.rules.splice(index, 1);
+      renderRules();
+    }
+
+    function updateStats() {
+      document.getElementById('ruleCountStat').textContent = extractedData.rules.length;
+
+      let labelCount = 0, forwardCount = 0;
+      extractedData.rules.forEach(r => {
+        if (r.actionType === 'addLabel' || r.actionType === 'labelAndArchive') labelCount++;
+        if (r.actionType === 'forward') forwardCount++;
+      });
+
+      document.getElementById('labelCountStat').textContent = labelCount;
+      document.getElementById('forwardCountStat').textContent = forwardCount;
+    }
+
+    // --- Submit ---
+    function handleFormSubmit() {
+      document.getElementById('payloadInput').value = JSON.stringify(extractedData);
+      setTimeout(() => {
+        document.getElementById('editor-view').style.display = 'none';
+        document.getElementById('success-view').style.display = 'block';
+      }, 500);
+    }
+
+    function resetView() {
+      document.getElementById('editor-view').style.display = 'block';
+      document.getElementById('success-view').style.display = 'none';
+    }
+
+    // --- Init ---
+    function initUI() {
+      ruleIdCounter = extractedData.rules.length;
+
+      // Set active action tab
+      const actionBtns = document.querySelectorAll('.action-btn');
+      actionBtns.forEach(btn => btn.classList.remove('active'));
+      switch(extractedData.action) {
+        case 'create_gmail_filter': actionBtns[0].classList.add('active'); break;
+        case 'apply_gmail_labels': actionBtns[1].classList.add('active'); break;
+        case 'setup_auto_forward': actionBtns[2].classList.add('active'); break;
+      }
+
+      renderRules();
+    }
+
+    window.onload = function() {
+      if (typeof window.INITIAL_DATA !== 'undefined') {
+        extractedData = window.INITIAL_DATA;
+      }
+      initUI();
+    };
+  </script>
+</body>
+</html>

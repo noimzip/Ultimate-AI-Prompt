@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スキルファイル作成ウィザード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+  
+  :root {
+    --bg-primary: #090d16;
+    --bg-secondary: #111625;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --text-main: #f3f4f6;
+    --text-muted: #9ca3af;
+    --border: #1f2937;
+    --card-bg: rgba(17, 22, 37, 0.75);
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 950px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 12px 45px rgba(0,0,0,0.6);
+  }
+
+  h2 {
+    color: var(--text-main);
+    font-weight: 700;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5em;
+  }
+
+  h2 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    height: 520px;
+  }
+
+  /* Form Editor */
+  .editor-scroll {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .input-group label {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .input-group input, .input-group textarea {
+    background: rgba(9, 13, 22, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85em;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .input-group input:focus, .input-group textarea:focus {
+    border-color: var(--accent);
+  }
+
+  /* Preview Screen */
+  .preview-panel {
+    background: #05070c;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .preview-header {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .markdown-content {
+    flex: 1;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8em;
+    color: #a7f3d0;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    background: transparent;
+    border: none;
+    resize: none;
+    outline: none;
+    padding: 10px;
+  }
+
+  /* Actions */
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 15px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <h2><span>✦</span> スキルファイル作成ウィザード</h2>
+    <div class="subtitle">AIエージェントの新規スキル定義（Markdown）を作成します。必要事項を入力すると、右側にプレビューがリアルタイム生成されます。</div>
+
+    <div class="layout">
+      <!-- Left side: Form Editor -->
+      <div class="editor-scroll">
+        <div class="input-group">
+          <label>スキル名</label>
+          <input type="text" id="skillName" oninput="generateMarkdown()" placeholder="例: ファイル形式・フォーマット変換">
+        </div>
+        
+        <div class="input-group">
+          <label>説明 (一言で概要)</label>
+          <input type="text" id="description" oninput="generateMarkdown()" placeholder="例: ファイルを別の指定形式に変換する">
+        </div>
+
+        <div class="input-group">
+          <label>起動トリガー (トリガー条件、改行区切り)</label>
+          <textarea id="triggers" rows="3" oninput="generateMarkdown()" placeholder="例: 「ファイルをCSVにして」と指示されたとき"></textarea>
+        </div>
+
+        <div class="input-group">
+          <label>非起動トリガー (対象外とする条件、改行区切り)</label>
+          <textarea id="negativeTriggers" rows="2" oninput="generateMarkdown()" placeholder="例: 単なるファイル名変更のみの場合"></textarea>
+        </div>
+
+        <div class="input-group">
+          <label>使用すべき状況 (When to Use)</label>
+          <textarea id="whenToUse" rows="3" oninput="generateMarkdown()" placeholder="例: ユーザーがデータの変換を望んでいるとき"></textarea>
+        </div>
+
+        <div class="input-group">
+          <label>実行手順 (Process、改行区切り)</label>
+          <textarea id="process" rows="4" oninput="generateMarkdown()" placeholder="1. ファイルを受け取る&#10;2. 指定形式に変換する&#10;3. VFSに保存する"></textarea>
+        </div>
+
+        <div class="input-group">
+          <label>ガイドライン・注意点 (Guidelines、改行区切り)</label>
+          <textarea id="guidelines" rows="4" oninput="generateMarkdown()" placeholder="・テキストベースの出力に限定すること&#10;・データ破損を防ぐこと"></textarea>
+        </div>
+      </div>
+
+      <!-- Right side: Live Preview -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span>LIVE MARKDOWN PREVIEW</span>
+          <span style="color: var(--accent);">[SKILL_NAME].md</span>
+        </div>
+        <textarea class="markdown-content" id="markdownPreview" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <form action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="handleSaveSubmit()">
+        <input type="hidden" name="payload" id="payloadInput">
+        <button type="submit" class="btn btn-primary">スキルを確定してVFSに保存する</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // フォームの入力値からMarkdownをリアルタイム生成
+    function generateMarkdown() {
+      const name = document.getElementById('skillName').value || "新規スキル";
+      const desc = document.getElementById('description').value || "スキルの説明...";
+      
+      const triggersText = document.getElementById('triggers').value;
+      const triggers = triggersText ? triggersText.split('\n').map(t => `  - ${t.trim()}`).join('\n') : "  - (トリガーなし)";
+      
+      const negTriggersText = document.getElementById('negativeTriggers').value;
+      const negTriggers = negTriggersText ? negTriggersText.split('\n').map(t => `  - ${t.trim()}`).join('\n') : "  - (特になし)";
+      
+      const whenToUse = document.getElementById('whenToUse').value || "使用すべき状況を記載してください。";
+      
+      const processText = document.getElementById('process').value;
+      const process = processText ? processText.split('\n').map((p, i) => `${p.trim()}`).join('\n') : "1. 手順1\n2. 手順2";
+      
+      const guidelinesText = document.getElementById('guidelines').value;
+      const guidelines = guidelinesText ? guidelinesText.split('\n').map(g => `- ${g.trim()}`).join('\n') : "- ガイドライン1\n- ガイドライン2";
+
+      const md = `---
+name: ${name}
+description: ${desc}
+triggers:
+${triggers}
+negative_triggers:
+${negTriggers}
+---
+
+# ${name}
+
+## When to Use
+
+${whenToUse}
+
+## Process
+
+${process}
+
+## Guidelines
+
+${guidelines}
+`;
+
+      document.getElementById('markdownPreview').value = md;
+    }
+
+    // 保存時のデータセット
+    function handleSaveSubmit() {
+      const md = document.getElementById('markdownPreview').value;
+      const name = document.getElementById('skillName').value || "new-skill";
+      
+      // 日本時間の日時取得
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const fileName = `${name}-${year}-${month}-${date}-${hours}-${minutes}.md`;
+
+      document.getElementById('payloadInput').value = JSON.stringify({
+        action: "save_skill",
+        fileName: fileName,
+        content: md
+      });
+    }
+
+    window.onload = function() {
+      generateMarkdown();
+    };
+  </script>
+</body>
+</html>

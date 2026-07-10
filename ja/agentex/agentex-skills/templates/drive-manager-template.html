@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドライブファイル管理ダッシュボード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg-primary: #0a0d14;
+    --bg-secondary: #111827;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: rgba(59, 130, 246, 0.12);
+    --text-main: #f3f4f6;
+    --text-muted: #9ca3af;
+    --border: #1f2937;
+    --card-bg: rgba(17, 24, 39, 0.7);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 980px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.7);
+  }
+
+  h2 {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5em;
+    margin-bottom: 4px;
+  }
+
+  h2 .icon {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-size: 0.88em;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+  }
+
+  /* Search Section */
+  .search-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  .search-title {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .search-grid {
+    display: grid;
+    grid-template-columns: 1fr 200px auto;
+    gap: 10px;
+    align-items: end;
+  }
+
+  .search-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .search-group label {
+    font-size: 0.72em;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .search-group input,
+  .search-group select {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85em;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .search-group input:focus,
+  .search-group select:focus {
+    border-color: var(--accent);
+  }
+
+  .search-group select option {
+    background: var(--bg-secondary);
+  }
+
+  .btn-search {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: fit-content;
+  }
+
+  .btn-search:hover {
+    background: var(--accent-hover);
+  }
+
+  /* Results count */
+  .results-info {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* File List */
+  .file-list {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .file-list-header {
+    display: grid;
+    grid-template-columns: 1fr 150px 120px 100px 130px;
+    padding: 10px 16px;
+    background: rgba(59, 130, 246, 0.08);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72em;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .file-list-body {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .file-item {
+    display: grid;
+    grid-template-columns: 1fr 150px 120px 100px 130px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.15s ease;
+    font-size: 0.85em;
+    cursor: pointer;
+  }
+
+  .file-item:last-child { border-bottom: none; }
+
+  .file-item:hover {
+    background: rgba(59, 130, 246, 0.04);
+  }
+
+  .file-item.selected {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid var(--accent);
+  }
+
+  .file-name {
+    font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .file-icon {
+    font-size: 1.1em;
+    flex-shrink: 0;
+  }
+
+  .file-type {
+    color: var(--text-muted);
+    font-size: 0.85em;
+  }
+
+  .file-size {
+    color: var(--text-muted);
+  }
+
+  .file-date {
+    color: var(--text-muted);
+    font-size: 0.9em;
+  }
+
+  .file-owner {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 0.9em;
+  }
+
+  /* Action Panel */
+  .action-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    display: none;
+  }
+
+  .action-panel.visible { display: block; }
+
+  .action-title {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .action-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .action-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+
+  .action-tab:hover {
+    color: var(--text-main);
+  }
+
+  .action-tab.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .action-content {
+    display: none;
+  }
+
+  .action-content.visible { display: block; }
+
+  .action-form-row {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 10px;
+  }
+
+  .action-form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-form-group label {
+    font-size: 0.72em;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .action-form-group input,
+  .action-form-group select {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85em;
+    outline: none;
+  }
+
+  .action-form-group input:focus,
+  .action-form-group select:focus {
+    border-color: var(--accent);
+  }
+
+  .action-form-group select option {
+    background: var(--bg-secondary);
+  }
+
+  .btn-action {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.82em;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .btn-move {
+    background: var(--warning);
+    color: #000;
+  }
+
+  .btn-move:hover { background: #d97706; }
+
+  .btn-copy {
+    background: var(--success);
+    color: #fff;
+  }
+
+  .btn-copy:hover { background: #059669; }
+
+  .btn-share {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-share:hover { background: var(--accent-hover); }
+
+  .validation-error {
+    color: var(--danger);
+    font-size: 0.75em;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .selected-file-info {
+    font-size: 0.82em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(59, 130, 246, 0.06);
+    border-radius: 6px;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+  }
+
+  .selected-file-info strong {
+    color: var(--text-main);
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <h2><span class="icon">📁</span> ドライブファイル管理</h2>
+    <div class="subtitle">Googleドライブのファイルを検索・整理・共有設定変更できます。ファイルを選択してアクションを実行してください。</div>
+
+    <!-- Search -->
+    <div class="search-section">
+      <div class="search-title">🔍 ファイル検索</div>
+      <div class="search-grid">
+        <div class="search-group">
+          <label>検索キーワード</label>
+          <input type="text" id="searchKeyword" placeholder="ファイル名で検索..." value="">
+        </div>
+        <div class="search-group">
+          <label>ファイルタイプ</label>
+          <select id="searchMimeType">
+            <option value="">すべてのタイプ</option>
+            <option value="application/vnd.google-apps.document">ドキュメント</option>
+            <option value="application/vnd.google-apps.spreadsheet">スプレッドシート</option>
+            <option value="application/vnd.google-apps.presentation">プレゼンテーション</option>
+            <option value="application/pdf">PDF</option>
+            <option value="image/">画像</option>
+            <option value="application/vnd.google-apps.folder">フォルダ</option>
+          </select>
+        </div>
+        <button class="btn-search" onclick="performSearch()">検索</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-info">
+      <span id="resultCount">検索結果を待っています...</span>
+    </div>
+
+    <div class="file-list">
+      <div class="file-list-header">
+        <span>ファイル名</span>
+        <span>タイプ</span>
+        <span>サイズ</span>
+        <span>更新日</span>
+        <span>オーナー</span>
+      </div>
+      <div class="file-list-body" id="fileListContainer">
+        <div class="empty-state">検索結果がここに表示されます。</div>
+      </div>
+    </div>
+
+    <!-- Action Panel -->
+    <div class="action-panel" id="actionPanel">
+      <div class="action-title">⚡ ファイルアクション</div>
+      <div class="selected-file-info" id="selectedFileInfo">選択中: <strong>-</strong></div>
+
+      <div class="action-tabs">
+        <button class="action-tab active" onclick="switchActionTab('move')">📦 移動</button>
+        <button class="action-tab" onclick="switchActionTab('copy')">📋 コピー</button>
+        <button class="action-tab" onclick="switchActionTab('share')">🔗 共有</button>
+      </div>
+
+      <!-- Move -->
+      <div class="action-content visible" id="action-move">
+        <div class="action-form-row">
+          <div class="action-form-group">
+            <label>移動先フォルダID</label>
+            <input type="text" id="moveFolderId" placeholder="フォルダIDを入力">
+          </div>
+          <form action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="handleMoveSubmit()">
+            <input type="hidden" name="payload" id="payloadMove">
+            <button type="submit" class="btn-action btn-move">移動する</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Copy -->
+      <div class="action-content" id="action-copy">
+        <div class="action-form-row">
+          <div class="action-form-group">
+            <label>コピー先フォルダID</label>
+            <input type="text" id="copyFolderId" placeholder="フォルダIDを入力">
+          </div>
+          <div class="action-form-group">
+            <label>新しいファイル名</label>
+            <input type="text" id="copyNewName" placeholder="コピー後のファイル名">
+          </div>
+          <form action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="handleCopySubmit()">
+            <input type="hidden" name="payload" id="payloadCopy">
+            <button type="submit" class="btn-action btn-copy">コピーする</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Share -->
+      <div class="action-content" id="action-share">
+        <div class="action-form-row">
+          <div class="action-form-group">
+            <label>共有先メールアドレス</label>
+            <input type="email" id="shareEmail" placeholder="user@example.com">
+            <div class="validation-error" id="emailError">有効なメールアドレスを入力してください</div>
+          </div>
+          <div class="action-form-group">
+            <label>権限</label>
+            <select id="shareRole">
+              <option value="reader">閲覧者</option>
+              <option value="writer">編集者</option>
+            </select>
+          </div>
+          <form action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="return handleShareSubmit()">
+            <input type="hidden" name="payload" id="payloadShare">
+            <button type="submit" class="btn-action btn-share">共有する</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // Geminiが抽出・生成するドライブファイルデータ
+    // ----------------------------------------------------
+    let extractedData = {
+      searchQuery: {
+        keyword: "",
+        mimeType: "",
+        folderId: ""
+      },
+      files: [
+        {
+          id: "file1",
+          name: "第3四半期企画書",
+          mimeType: "application/vnd.google-apps.document",
+          size: 245760,
+          modifiedAt: "2026-05-20T10:30:00Z",
+          owner: "山田 太郎",
+          url: "https://docs.google.com/document/d/file1/edit"
+        },
+        {
+          id: "file2",
+          name: "売上データ 2026年5月",
+          mimeType: "application/vnd.google-apps.spreadsheet",
+          size: 102400,
+          modifiedAt: "2026-05-22T15:00:00Z",
+          owner: "鈴木 花子",
+          url: "https://docs.google.com/spreadsheets/d/file2/edit"
+        },
+        {
+          id: "file3",
+          name: "プレゼン資料_v2.pdf",
+          mimeType: "application/pdf",
+          size: 5242880,
+          modifiedAt: "2026-05-18T09:00:00Z",
+          owner: "山田 太郎",
+          url: "https://drive.google.com/file/d/file3/view"
+        }
+      ]
+    };
+
+    let selectedFileId = null;
+
+    // MIMEタイプをアイコンに変換
+    function getMimeIcon(mimeType) {
+      if (mimeType.includes('document')) return '📄';
+      if (mimeType.includes('spreadsheet')) return '📊';
+      if (mimeType.includes('presentation')) return '📽️';
+      if (mimeType.includes('pdf')) return '📕';
+      if (mimeType.includes('image')) return '🖼️';
+      if (mimeType.includes('folder')) return '📁';
+      return '📎';
+    }
+
+    // MIMEタイプを日本語に変換
+    function getMimeLabel(mimeType) {
+      if (mimeType.includes('document')) return 'ドキュメント';
+      if (mimeType.includes('spreadsheet')) return 'スプレッドシート';
+      if (mimeType.includes('presentation')) return 'プレゼン';
+      if (mimeType.includes('pdf')) return 'PDF';
+      if (mimeType.includes('image')) return '画像';
+      if (mimeType.includes('folder')) return 'フォルダ';
+      return 'その他';
+    }
+
+    // ファイルサイズのフォーマット
+    function formatFileSize(bytes) {
+      if (!bytes || bytes === 0) return '-';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let size = parseInt(bytes);
+      let unitIndex = 0;
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex++;
+      }
+      return size.toFixed(unitIndex > 0 ? 1 : 0) + ' ' + units[unitIndex];
+    }
+
+    // 日付フォーマット
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      return `${d.getMonth()+1}/${d.getDate()}`;
+    }
+
+    // UI初期化
+    function initUI() {
+      // 検索クエリの初期値を設定
+      document.getElementById('searchKeyword').value = extractedData.searchQuery.keyword || '';
+      document.getElementById('searchMimeType').value = extractedData.searchQuery.mimeType || '';
+      renderFileList();
+    }
+
+    // ファイルリストの描画
+    function renderFileList() {
+      const container = document.getElementById('fileListContainer');
+      const files = extractedData.files;
+
+      document.getElementById('resultCount').textContent = `${files.length} 件のファイルが見つかりました`;
+
+      if (files.length === 0) {
+        container.innerHTML = '<div class="empty-state">条件に一致するファイルが見つかりませんでした。キーワードやフィルターを変更してお試しください。</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      files.forEach(file => {
+        const selectedClass = file.id === selectedFileId ? 'selected' : '';
+        container.innerHTML += `
+          <div class="file-item ${selectedClass}" onclick="selectFile('${file.id}')">
+            <div class="file-name">
+              <span class="file-icon">${getMimeIcon(file.mimeType)}</span>
+              ${file.name}
+            </div>
+            <div class="file-type">${getMimeLabel(file.mimeType)}</div>
+            <div class="file-size">${formatFileSize(file.size)}</div>
+            <div class="file-date">${formatDate(file.modifiedAt)}</div>
+            <div class="file-owner">${file.owner}</div>
+          </div>
+        `;
+      });
+    }
+
+    // 検索実行（UIの状態をextractedDataに反映）
+    function performSearch() {
+      extractedData.searchQuery.keyword = document.getElementById('searchKeyword').value;
+      extractedData.searchQuery.mimeType = document.getElementById('searchMimeType').value;
+      // 実際にはGASにリクエストを送って結果を取得する想定
+      // ここではextractedDataのfilesがGeminiによって更新される前提
+      renderFileList();
+    }
+
+    // ファイル選択
+    function selectFile(id) {
+      selectedFileId = id;
+      const file = extractedData.files.find(f => f.id === id);
+      if (file) {
+        document.getElementById('selectedFileInfo').innerHTML = `選択中: <strong>${file.name}</strong>`;
+        document.getElementById('actionPanel').classList.add('visible');
+        // コピー時のデフォルトファイル名
+        document.getElementById('copyNewName').value = file.name + ' のコピー';
+      }
+      renderFileList();
+    }
+
+    // アクションタブ切り替え
+    function switchActionTab(tab) {
+      document.querySelectorAll('.action-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.action-content').forEach(c => c.classList.remove('visible'));
+      event.target.classList.add('active');
+      document.getElementById('action-' + tab).classList.add('visible');
+    }
+
+    // 移動送信
+    function handleMoveSubmit() {
+      document.getElementById('payloadMove').value = JSON.stringify({
+        action: 'organize_drive',
+        operation: 'move',
+        fileId: selectedFileId,
+        targetFolderId: document.getElementById('moveFolderId').value
+      });
+    }
+
+    // コピー送信
+    function handleCopySubmit() {
+      document.getElementById('payloadCopy').value = JSON.stringify({
+        action: 'organize_drive',
+        operation: 'copy',
+        fileId: selectedFileId,
+        targetFolderId: document.getElementById('copyFolderId').value,
+        newName: document.getElementById('copyNewName').value
+      });
+    }
+
+    // 共有送信（バリデーション付き）
+    function handleShareSubmit() {
+      const email = document.getElementById('shareEmail').value;
+      const emailError = document.getElementById('emailError');
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!emailRegex.test(email)) {
+        emailError.style.display = 'block';
+        return false;
+      }
+      emailError.style.display = 'none';
+
+      document.getElementById('payloadShare').value = JSON.stringify({
+        action: 'share_drive_file',
+        fileId: selectedFileId,
+        email: email,
+        role: document.getElementById('shareRole').value
+      });
+      return true;
+    }
+
+    window.onload = function() {
+      if (typeof window.INITIAL_DRIVE !== 'undefined') {
+        extractedData = window.INITIAL_DRIVE;
+      }
+      initUI();
+    };
+  </script>
+</body>
+</html>

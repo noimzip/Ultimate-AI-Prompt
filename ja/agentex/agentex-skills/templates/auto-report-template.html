@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自動レポート生成ダッシュボード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg-primary: #0c0e18;
+    --bg-secondary: #12152a;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-light: rgba(139, 92, 246, 0.12);
+    --text-main: #f3f4f6;
+    --text-muted: #9ca3af;
+    --border: #1e2240;
+    --card-bg: rgba(18, 21, 42, 0.7);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 950px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.7);
+  }
+
+  h2 {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5em;
+    margin-bottom: 4px;
+  }
+
+  h2 .icon {
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-size: 0.88em;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+  }
+
+  /* Report Meta Section */
+  .meta-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  .meta-title {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 200px 1fr;
+    gap: 12px;
+  }
+
+  .meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-group label {
+    font-size: 0.72em;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .meta-group input,
+  .meta-group select {
+    background: rgba(15, 20, 40, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.88em;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .meta-group input:focus,
+  .meta-group select:focus {
+    border-color: var(--accent);
+  }
+
+  .meta-group select option {
+    background: var(--bg-secondary);
+  }
+
+  /* Sections */
+  .sections-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .sections-label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+
+  .btn-add-section {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.78em;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px dashed var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition: all 0.2s ease;
+  }
+
+  .btn-add-section:hover {
+    background: var(--accent-light);
+  }
+
+  .sections-container {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .section-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+    position: relative;
+    transition: border-color 0.2s ease;
+  }
+
+  .section-card:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+  }
+
+  .section-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .section-number {
+    font-size: 0.75em;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+
+  .section-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .btn-section-action {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.75em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .btn-section-action:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-section-action.delete:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .section-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .section-row {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 10px;
+  }
+
+  .section-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .section-form-group label {
+    font-size: 0.7em;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .section-form-group input,
+  .section-form-group textarea,
+  .section-form-group select {
+    background: rgba(15, 20, 40, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85em;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .section-form-group input:focus,
+  .section-form-group textarea:focus,
+  .section-form-group select:focus {
+    border-color: var(--accent);
+  }
+
+  .section-form-group select option {
+    background: var(--bg-secondary);
+  }
+
+  /* Table Editor */
+  .table-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .table-toggle label {
+    font-size: 0.78em;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .table-toggle input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .table-editor {
+    margin-top: 10px;
+    display: none;
+  }
+
+  .table-editor.visible { display: block; }
+
+  .table-editor-title {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .table-preview {
+    overflow-x: auto;
+    margin-bottom: 8px;
+  }
+
+  .table-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82em;
+  }
+
+  .table-preview th {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent);
+    padding: 7px 10px;
+    text-align: left;
+    border: 1px solid var(--border);
+    font-weight: 600;
+  }
+
+  .table-preview td {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+  }
+
+  .table-preview input {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 1em;
+    width: 100%;
+    outline: none;
+    padding: 2px;
+  }
+
+  .table-preview input:focus {
+    background: rgba(139, 92, 246, 0.06);
+  }
+
+  .table-btn-group {
+    display: flex;
+    gap: 6px;
+  }
+
+  .table-btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.72em;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+  }
+
+  .table-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Submit Section */
+  .submit-section {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .submit-info {
+    font-size: 0.8em;
+    color: var(--text-muted);
+  }
+
+  .btn-generate {
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+  }
+
+  .btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  }
+
+  .validation-error {
+    color: var(--danger);
+    font-size: 0.75em;
+    margin-top: 4px;
+    display: none;
+  }
+
+  /* Success view */
+  .success-view {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .success-view h3 {
+    font-size: 1.3em;
+    margin-bottom: 12px;
+    color: var(--success);
+  }
+
+  .success-view p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-size: 0.9em;
+  }
+
+  .notice-box {
+    text-align: left;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 20px;
+    font-size: 0.85em;
+    color: #fca5a5;
+  }
+
+  .notice-box strong { color: var(--danger); }
+
+  .btn-back {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    margin-right: 12px;
+  }
+
+  .btn-back:hover {
+    color: var(--text-main);
+    border-color: var(--text-muted);
+  }
+
+  .btn-open-doc {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88em;
+    cursor: pointer;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-open-doc:hover {
+    background: var(--accent-hover);
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Editor View -->
+    <div id="editor-view">
+      <h2><span class="icon">📊</span> 自動レポート生成</h2>
+      <div class="subtitle">レポートの構成を編集し、GoogleドキュメントまたはGoogleスプレッドシートとして自動生成します。</div>
+
+      <!-- Report Meta -->
+      <div class="meta-section">
+        <div class="meta-title">✦ レポート設定</div>
+        <div class="meta-grid">
+          <div class="meta-group">
+            <label>レポートタイトル *</label>
+            <input type="text" id="reportTitle" placeholder="レポートのタイトル">
+            <div class="validation-error" id="titleError">タイトルを入力してください</div>
+          </div>
+          <div class="meta-group">
+            <label>出力形式</label>
+            <select id="outputFormat">
+              <option value="document">📄 ドキュメント</option>
+              <option value="spreadsheet">📊 スプレッドシート</option>
+            </select>
+          </div>
+          <div class="meta-group">
+            <label>テンプレートID（任意）</label>
+            <input type="text" id="templateId" placeholder="空白で新規作成">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sections -->
+      <div class="sections-header">
+        <span class="sections-label">📑 セクション構成</span>
+        <button class="btn-add-section" onclick="addSection()">+ セクションを追加</button>
+      </div>
+
+      <div class="sections-container" id="sectionsContainer"></div>
+
+      <!-- Submit -->
+      <div class="submit-section">
+        <div class="submit-info">セクション数: <strong id="sectionCount">0</strong></div>
+        <form action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="return handleFormSubmit()">
+          <input type="hidden" name="payload" id="payloadInput">
+          <button type="submit" class="btn-generate">レポートを生成する</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Success View -->
+    <div id="success-view" class="success-view">
+      <h3>✅ レポート生成を開始しました</h3>
+      <div class="notice-box">
+        <strong>⚠️ 初回アクセスのユーザーへ</strong><br>
+        別タブで「Googleの承認画面」が出た場合は許可してください。<br>
+        許可した直後はセキュリティの都合でデータが送られません。そのタブを閉じ、<strong>下のボタンでもう一度処理を実行してください。</strong>
+      </div>
+      <p>別タブの処理が完了したら、生成されたレポートをGoogleドライブで確認できます。</p>
+      <button class="btn-back" onclick="resetView()">編集画面に戻る</button>
+      <a href="https://drive.google.com" target="_blank" class="btn-open-doc">Googleドライブを開く</a>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // Geminiが抽出・生成するレポートデータ
+    // ----------------------------------------------------
+    let extractedData = {
+      title: "月次進捗レポート",
+      outputFormat: "document",
+      templateId: "",
+      sections: [
+        {
+          id: "s1",
+          heading: "概要",
+          headingLevel: 2,
+          body: "今月のプロジェクト全体の進捗状況を報告します。",
+          tableData: null
+        },
+        {
+          id: "s2",
+          heading: "タスク進捗一覧",
+          headingLevel: 2,
+          body: "",
+          tableData: {
+            headers: ["タスク名", "担当者", "進捗率", "期限"],
+            rows: [
+              ["UI設計", "田中", "80%", "2026-05-30"],
+              ["バックエンド開発", "鈴木", "60%", "2026-06-15"]
+            ]
+          }
+        }
+      ]
+    };
+
+    // UI初期化
+    function initUI() {
+      document.getElementById('reportTitle').value = extractedData.title;
+      document.getElementById('outputFormat').value = extractedData.outputFormat;
+      document.getElementById('templateId').value = extractedData.templateId || '';
+      renderSections();
+    }
+
+    // セクション描画
+    function renderSections() {
+      const container = document.getElementById('sectionsContainer');
+      container.innerHTML = '';
+      document.getElementById('sectionCount').textContent = extractedData.sections.length;
+
+      extractedData.sections.forEach((section, index) => {
+        const hasTable = section.tableData && section.tableData.headers && section.tableData.headers.length > 0;
+        const tableChecked = hasTable ? 'checked' : '';
+        const tableVisible = hasTable ? 'visible' : '';
+
+        let tableHtml = '';
+        if (hasTable) {
+          tableHtml = buildTableEditorHtml(index, section.tableData);
+        }
+
+        container.innerHTML += `
+          <div class="section-card" id="section-${index}">
+            <div class="section-card-header">
+              <span class="section-number">セクション ${index + 1}</span>
+              <div class="section-actions">
+                <button class="btn-section-action" onclick="moveSection(${index}, -1)" title="上に移動">↑</button>
+                <button class="btn-section-action" onclick="moveSection(${index}, 1)" title="下に移動">↓</button>
+                <button class="btn-section-action delete" onclick="deleteSection(${index})" title="削除">✕</button>
+              </div>
+            </div>
+            <div class="section-form">
+              <div class="section-row">
+                <div class="section-form-group">
+                  <label>見出し</label>
+                  <input type="text" id="heading-${index}" value="${section.heading}" oninput="syncSection(${index})">
+                </div>
+                <div class="section-form-group">
+                  <label>見出しレベル</label>
+                  <select id="level-${index}" onchange="syncSection(${index})">
+                    <option value="1" ${section.headingLevel === 1 ? 'selected' : ''}>H1 - 大見出し</option>
+                    <option value="2" ${section.headingLevel === 2 ? 'selected' : ''}>H2 - 中見出し</option>
+                    <option value="3" ${section.headingLevel === 3 ? 'selected' : ''}>H3 - 小見出し</option>
+                  </select>
+                </div>
+              </div>
+              <div class="section-form-group">
+                <label>本文</label>
+                <textarea id="body-${index}" rows="3" oninput="syncSection(${index})" placeholder="セクションの本文を入力...">${section.body || ''}</textarea>
+              </div>
+              <div class="table-toggle">
+                <input type="checkbox" id="tableToggle-${index}" ${tableChecked} onchange="toggleTable(${index})">
+                <label for="tableToggle-${index}">📊 表データを含める</label>
+              </div>
+              <div class="table-editor ${tableVisible}" id="tableEditor-${index}">
+                <div class="table-editor-title">表データの編集</div>
+                <div class="table-preview" id="tablePreview-${index}">
+                  ${tableHtml}
+                </div>
+                <div class="table-btn-group">
+                  <button class="table-btn" onclick="addTableColumn(${index})">+ 列を追加</button>
+                  <button class="table-btn" onclick="addTableRow(${index})">+ 行を追加</button>
+                  <button class="table-btn" onclick="removeTableColumn(${index})">- 列を削除</button>
+                  <button class="table-btn" onclick="removeTableRow(${index})">- 行を削除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // テーブルエディタHTMLの構築
+    function buildTableEditorHtml(sectionIndex, tableData) {
+      if (!tableData || !tableData.headers) return '';
+      let html = '<table>';
+      // ヘッダー行
+      html += '<tr>';
+      tableData.headers.forEach((h, ci) => {
+        html += `<th><input value="${h}" onchange="syncTableCell(${sectionIndex}, -1, ${ci}, this.value)" placeholder="列名"></th>`;
+      });
+      html += '</tr>';
+      // データ行
+      (tableData.rows || []).forEach((row, ri) => {
+        html += '<tr>';
+        row.forEach((cell, ci) => {
+          html += `<td><input value="${cell}" onchange="syncTableCell(${sectionIndex}, ${ri}, ${ci}, this.value)"></td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</table>';
+      return html;
+    }
+
+    // セクション内容の同期
+    function syncSection(index) {
+      extractedData.sections[index].heading = document.getElementById(`heading-${index}`).value;
+      extractedData.sections[index].headingLevel = parseInt(document.getElementById(`level-${index}`).value);
+      extractedData.sections[index].body = document.getElementById(`body-${index}`).value;
+    }
+
+    // テーブルセルの同期
+    function syncTableCell(sectionIndex, rowIndex, colIndex, value) {
+      const tableData = extractedData.sections[sectionIndex].tableData;
+      if (rowIndex === -1) {
+        tableData.headers[colIndex] = value;
+      } else {
+        tableData.rows[rowIndex][colIndex] = value;
+      }
+    }
+
+    // テーブルの表示切り替え
+    function toggleTable(index) {
+      const checked = document.getElementById(`tableToggle-${index}`).checked;
+      const editor = document.getElementById(`tableEditor-${index}`);
+
+      if (checked) {
+        if (!extractedData.sections[index].tableData || !extractedData.sections[index].tableData.headers) {
+          extractedData.sections[index].tableData = {
+            headers: ["列1", "列2"],
+            rows: [["", ""]]
+          };
+        }
+        editor.classList.add('visible');
+        document.getElementById(`tablePreview-${index}`).innerHTML = buildTableEditorHtml(index, extractedData.sections[index].tableData);
+      } else {
+        extractedData.sections[index].tableData = null;
+        editor.classList.remove('visible');
+      }
+    }
+
+    // テーブル列の追加
+    function addTableColumn(sectionIndex) {
+      const td = extractedData.sections[sectionIndex].tableData;
+      td.headers.push("新しい列");
+      td.rows.forEach(row => row.push(""));
+      document.getElementById(`tablePreview-${sectionIndex}`).innerHTML = buildTableEditorHtml(sectionIndex, td);
+    }
+
+    // テーブル行の追加
+    function addTableRow(sectionIndex) {
+      const td = extractedData.sections[sectionIndex].tableData;
+      td.rows.push(new Array(td.headers.length).fill(""));
+      document.getElementById(`tablePreview-${sectionIndex}`).innerHTML = buildTableEditorHtml(sectionIndex, td);
+    }
+
+    // テーブル列の削除
+    function removeTableColumn(sectionIndex) {
+      const td = extractedData.sections[sectionIndex].tableData;
+      if (td.headers.length <= 1) return;
+      td.headers.pop();
+      td.rows.forEach(row => row.pop());
+      document.getElementById(`tablePreview-${sectionIndex}`).innerHTML = buildTableEditorHtml(sectionIndex, td);
+    }
+
+    // テーブル行の削除
+    function removeTableRow(sectionIndex) {
+      const td = extractedData.sections[sectionIndex].tableData;
+      if (td.rows.length <= 0) return;
+      td.rows.pop();
+      document.getElementById(`tablePreview-${sectionIndex}`).innerHTML = buildTableEditorHtml(sectionIndex, td);
+    }
+
+    // セクションの追加
+    function addSection() {
+      extractedData.sections.push({
+        id: 's_' + Date.now(),
+        heading: "新しいセクション",
+        headingLevel: 2,
+        body: "",
+        tableData: null
+      });
+      renderSections();
+      // スクロール
+      const container = document.getElementById('sectionsContainer');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // セクションの削除
+    function deleteSection(index) {
+      if (extractedData.sections.length <= 1) {
+        alert("レポートには最低1つのセクションが必要です。");
+        return;
+      }
+      extractedData.sections.splice(index, 1);
+      renderSections();
+    }
+
+    // セクションの移動
+    function moveSection(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= extractedData.sections.length) return;
+      // まず現在のUIの内容を同期
+      syncAllSections();
+      const temp = extractedData.sections[index];
+      extractedData.sections[index] = extractedData.sections[newIndex];
+      extractedData.sections[newIndex] = temp;
+      renderSections();
+    }
+
+    // 全セクションの内容を同期
+    function syncAllSections() {
+      extractedData.sections.forEach((section, index) => {
+        const headingEl = document.getElementById(`heading-${index}`);
+        const levelEl = document.getElementById(`level-${index}`);
+        const bodyEl = document.getElementById(`body-${index}`);
+        if (headingEl) section.heading = headingEl.value;
+        if (levelEl) section.headingLevel = parseInt(levelEl.value);
+        if (bodyEl) section.body = bodyEl.value;
+      });
+    }
+
+    // フォーム送信
+    function handleFormSubmit() {
+      const title = document.getElementById('reportTitle').value.trim();
+      const titleError = document.getElementById('titleError');
+
+      if (!title) {
+        titleError.style.display = 'block';
+        return false;
+      }
+      titleError.style.display = 'none';
+
+      if (extractedData.sections.length === 0) {
+        alert("レポートには最低1つのセクションが必要です。");
+        return false;
+      }
+
+      // 全セクションの同期
+      syncAllSections();
+
+      extractedData.title = title;
+      extractedData.outputFormat = document.getElementById('outputFormat').value;
+      extractedData.templateId = document.getElementById('templateId').value.trim();
+
+      document.getElementById('payloadInput').value = JSON.stringify({
+        action: 'generate_report',
+        ...extractedData
+      });
+
+      setTimeout(() => {
+        document.getElementById('editor-view').style.display = 'none';
+        document.getElementById('success-view').style.display = 'block';
+      }, 500);
+
+      return true;
+    }
+
+    // ビューのリセット
+    function resetView() {
+      document.getElementById('editor-view').style.display = 'block';
+      document.getElementById('success-view').style.display = 'none';
+    }
+
+    window.onload = function() {
+      if (typeof window.INITIAL_REPORT !== 'undefined') {
+        extractedData = window.INITIAL_REPORT;
+      }
+      initUI();
+    };
+  </script>
+</body>
+</html>

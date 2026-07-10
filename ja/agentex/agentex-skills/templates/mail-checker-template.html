@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>メール確認・自動返信ダッシュボード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  
+  :root {
+    --bg-primary: #0b0f19;
+    --bg-secondary: #111827;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --text-main: #f9fafb;
+    --text-muted: #9ca3af;
+    --border: #1f2937;
+    --card-bg: rgba(17, 24, 39, 0.7);
+    --success: #10b981;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 950px;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  }
+
+  h2 {
+    color: var(--text-main);
+    font-weight: 700;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5em;
+  }
+
+  h2 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    height: 500px;
+  }
+
+  /* Mail List */
+  .mail-list {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mail-item {
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    background: transparent;
+    border-left: 3px solid transparent;
+  }
+
+  .mail-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+  }
+
+  .mail-item.active {
+    background: rgba(99, 102, 241, 0.1);
+    border-left-color: var(--accent);
+  }
+
+  .mail-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+
+  .sender {
+    font-weight: 600;
+    font-size: 0.9em;
+    color: var(--text-main);
+  }
+
+  .time {
+    font-size: 0.75em;
+    color: var(--text-muted);
+  }
+
+  .subject {
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #e5e7eb;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .snippet {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .badge {
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .badge-urgent { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+  .badge-normal { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+  .badge-newsletter { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+
+  /* Mail Detail & Draft Editor */
+  .detail-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .detail-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+
+  .detail-subject {
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .detail-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: var(--text-muted);
+  }
+
+  .detail-body {
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #d1d5db;
+    white-space: pre-wrap;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .ai-suggest {
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px dashed var(--accent);
+    border-radius: 8px;
+    padding: 15px;
+  }
+
+  .ai-suggest-title {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .draft-textarea {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9em;
+    outline: none;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+
+  .draft-textarea:focus {
+    border-color: var(--accent);
+  }
+
+  /* Actions */
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    color: var(--text-main);
+    border-color: var(--text-muted);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-hover);
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <h2><span>✉</span> メール自動確認・返信アシスタント</h2>
+    <div class="subtitle">AIが受信トレイを同期し、重要度と自動返信文を生成しました。返信文を調整して送信承認を行ってください。</div>
+
+    <div class="layout">
+      <!-- Left sidebar: mail list -->
+      <div class="mail-list" id="mailListContainer"></div>
+
+      <!-- Right panel: mail detail & draft editor -->
+      <div class="detail-panel" id="detailPanel">
+        <div style="margin: auto; text-align: center; color: var(--text-muted);">
+          メールを選択すると、詳細とAI生成の返信ドラフトが表示されます。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // Geminiが抽出・生成するメールデータ
+    // ----------------------------------------------------
+    let extractedData = {
+      mails: [
+        {
+          id: "m1",
+          sender: "山田 太郎 (株式会社A)",
+          time: "10:30",
+          subject: "お打ち合わせ日程のご調整について",
+          snippet: "お世話になっております。来週火曜日の14時からの日程ですが...",
+          body: "お世話になっております。\n株式会社Aの山田です。\n\n先ほどお電話いたしました件、来週の打ち合わせ日程のご調整をお願いしたく存じます。\n以下の候補日の中でご都合の良いお時間はございますでしょうか。\n\n1. 5月26日(火) 14:00-15:00\n2. 5月27日(水) 10:00-11:00\n3. 5月28日(木) 16:00-17:00\n\nよろしくお願いいたします。",
+          priority: "urgent", // urgent, normal, newsletter
+          suggestedReply: "お世話になっております。\nご提示いただいた候補日ですが、\n「1. 5月26日(火) 14:00-15:00」にてお願いできますでしょうか。\n\nどうぞよろしくお願いいたします。"
+        }
+      ]
+    };
+
+    let selectedMailId = null;
+
+    // UI初期化
+    function initUI() {
+      renderMailList();
+      if (extractedData.mails.length > 0) {
+        selectMail(extractedData.mails[0].id);
+      }
+    }
+
+    // メール一覧の描画
+    function renderMailList() {
+      const container = document.getElementById('mailListContainer');
+      container.innerHTML = '';
+      
+      extractedData.mails.forEach(mail => {
+        const isActive = mail.id === selectedMailId ? 'active' : '';
+        const priorityBadge = mail.priority === 'urgent' 
+          ? '<span class="badge badge-urgent">重要</span>' 
+          : mail.priority === 'newsletter' 
+            ? '<span class="badge badge-newsletter">メルマガ</span>' 
+            : '<span class="badge badge-normal">通常</span>';
+
+        container.innerHTML += `
+          <div class="mail-item ${isActive}" onclick="selectMail('${mail.id}')">
+            <div class="mail-item-header">
+              <span class="sender">${mail.sender}</span>
+              <span class="time">${mail.time}</span>
+            </div>
+            <div class="subject">${mail.subject}</div>
+            <div class="mail-item-header">
+              <span class="snippet">${mail.snippet}</span>
+              ${priorityBadge}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // メール選択時の詳細表示
+    function selectMail(id) {
+      selectedMailId = id;
+      renderMailList();
+      
+      const mail = extractedData.mails.find(m => m.id === id);
+      const panel = document.getElementById('detailPanel');
+      
+      if (!mail) {
+        panel.innerHTML = '<div style="margin: auto; text-align: center; color: var(--text-muted);">メールが見つかりません</div>';
+        return;
+      }
+
+      panel.innerHTML = `
+        <div class="detail-header">
+          <div class="detail-subject">${mail.subject}</div>
+          <div class="detail-meta">
+            <span>差出人: <strong>${mail.sender}</strong></span>
+            <span>受信時間: ${mail.time}</span>
+          </div>
+        </div>
+        
+        <div class="detail-body">${mail.body}</div>
+        
+        <div class="ai-suggest">
+          <div class="ai-suggest-title">✦ AI返信ドラフト (自由に編集可能)</div>
+          <textarea class="draft-textarea" id="draftInput" rows="6" oninput="updateDraft()">${mail.suggestedReply}</textarea>
+          
+          <div class="actions">
+            <button class="btn btn-secondary" onclick="ignoreMail()">返信不要としてマーク</button>
+            <form action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="handleSendSubmit('${mail.id}')" style="display:inline;">
+              <input type="hidden" name="payload" id="payloadInput-${mail.id}">
+              <button type="submit" class="btn btn-primary">返信を送信する</button>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    // ドラフト編集の同期
+    function updateDraft() {
+      const text = document.getElementById('draftInput').value;
+      const mail = extractedData.mails.find(m => m.id === selectedMailId);
+      if (mail) {
+        mail.suggestedReply = text;
+      }
+    }
+
+    // 返信不要マーク
+    function ignoreMail() {
+      alert("返信不要として処理しました（モック動作）");
+    }
+
+    // 送信送信時のデータセット
+    function handleSendSubmit(id) {
+      const mail = extractedData.mails.find(m => m.id === id);
+      document.getElementById(`payloadInput-${id}`).value = JSON.stringify({
+        action: "send_email",
+        mailId: mail.id,
+        to: mail.sender,
+        subject: "Re: " + mail.subject,
+        body: mail.suggestedReply
+      });
+    }
+
+    window.onload = function() {
+      if (typeof window.INITIAL_MAILS !== 'undefined') {
+        extractedData = window.INITIAL_MAILS;
+      }
+      initUI();
+    };
+  </script>
+</body>
+</html>

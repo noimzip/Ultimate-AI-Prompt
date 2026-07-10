@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スプレッドシート管理ダッシュボード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
+
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2236;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --accent-light: rgba(16, 185, 129, 0.12);
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border: #1e293b;
+    --border-focus: #10b981;
+    --card-bg: rgba(17, 24, 39, 0.75);
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --warning: #f59e0b;
+    --info: #6366f1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-main);
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 1050px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--accent-light);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+  }
+
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.5em;
+    color: var(--text-main);
+  }
+
+  .subtitle {
+    font-size: 0.88em;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+    padding-left: 52px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 22px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.85em;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+  }
+
+  .tab-btn:hover:not(.active) {
+    color: var(--text-main);
+    background: rgba(255,255,255,0.04);
+  }
+
+  /* Form Section */
+  .form-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-row.full {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 0.78em;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .form-group input, .form-group select {
+    background: rgba(10, 14, 26, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9em;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--border-focus);
+  }
+
+  .form-group input::placeholder {
+    color: #475569;
+  }
+
+  /* Headers Editor */
+  .headers-section {
+    margin-bottom: 16px;
+  }
+
+  .headers-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .header-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-light);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.84em;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .header-chip input {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.95em;
+    width: 100px;
+    outline: none;
+  }
+
+  .chip-remove {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 0 2px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .chip-remove:hover { opacity: 1; }
+
+  .btn-add-header {
+    background: transparent;
+    border: 1px dashed rgba(16,185,129,0.4);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82em;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .btn-add-header:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  /* Table */
+  .table-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    max-height: 350px;
+    overflow-y: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+  }
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  thead th {
+    background: var(--bg-tertiary);
+    color: var(--accent);
+    padding: 12px 14px;
+    font-size: 0.78em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 2px solid var(--accent);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  thead th:first-child {
+    width: 50px;
+    text-align: center;
+  }
+
+  thead th:last-child {
+    width: 60px;
+    text-align: center;
+  }
+
+  tbody tr {
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover {
+    background: rgba(16,185,129,0.04);
+  }
+
+  tbody td {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88em;
+  }
+
+  tbody td:first-child {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8em;
+    font-weight: 600;
+  }
+
+  tbody td input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-main);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95em;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  tbody td input:focus {
+    border-color: var(--accent);
+    background: rgba(10,14,26,0.5);
+  }
+
+  .btn-row-delete {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.1em;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    padding: 4px;
+  }
+
+  .btn-row-delete:hover { opacity: 1; }
+
+  /* Action Bar */
+  .action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .btn-add-row {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--text-muted);
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .btn-add-row:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .row-count {
+    font-size: 0.82em;
+    color: var(--text-muted);
+  }
+
+  /* Submit */
+  .submit-area {
+    display: flex;
+    gap: 12px;
+  }
+
+  .form-container {
+    flex: 1;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(16,185,129,0.25);
+  }
+
+  .btn-submit:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(16,185,129,0.35);
+  }
+
+  /* Success View */
+  .success-view {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .success-icon {
+    font-size: 3em;
+    margin-bottom: 16px;
+  }
+
+  .success-view h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.4em;
+    margin-bottom: 12px;
+  }
+
+  .success-view p {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-bottom: 20px;
+  }
+
+  .auth-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: left;
+    font-size: 0.88em;
+    color: var(--warning);
+    margin-bottom: 20px;
+  }
+
+  .btn-retry, .btn-open {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    text-decoration: none;
+    margin: 6px;
+  }
+
+  .btn-retry {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-open {
+    background: var(--info);
+    color: #fff;
+  }
+
+  /* Hidden panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  @media (max-width: 700px) {
+    .form-row { grid-template-columns: 1fr; }
+    .container { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">📊</div>
+      <h2>スプレッドシート管理</h2>
+    </div>
+    <div class="subtitle">スプレッドシートの作成・読み込み・編集を行います。ヘッダーとデータを編集して実行してください。</div>
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('create')">新規作成</button>
+      <button class="tab-btn" onclick="switchTab('read')">読み込み</button>
+      <button class="tab-btn" onclick="switchTab('update')">更新</button>
+    </div>
+
+    <!-- Editor View -->
+    <div id="editor-view">
+      <!-- Read/Update: Spreadsheet ID input -->
+      <div id="idInputSection" class="form-section" style="display:none;">
+        <div class="form-row full">
+          <div class="form-group">
+            <label>スプレッドシートID</label>
+            <input type="text" id="spreadsheetIdInput" placeholder="例: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" oninput="syncSpreadsheetId()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>対象シートタブ名（省略可）</label>
+            <input type="text" id="targetSheetInput" placeholder="省略するとアクティブシートを使用" oninput="syncTargetSheet()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sheet Name -->
+      <div class="form-section">
+        <div class="form-row">
+          <div class="form-group">
+            <label>シート名</label>
+            <input type="text" id="sheetNameInput" placeholder="シートの名前を入力" oninput="syncSheetName()">
+          </div>
+        </div>
+
+        <!-- Headers Editor -->
+        <div class="headers-section">
+          <div class="form-group">
+            <label>ヘッダー列</label>
+            <div class="headers-row" id="headersRow"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-wrapper">
+        <div class="table-scroll">
+          <table id="dataTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn-add-row" onclick="addRow()">+ 行を追加</button>
+        <span class="row-count" id="rowCount">0 行</span>
+      </div>
+
+      <!-- Submit -->
+      <div class="submit-area">
+        <form class="form-container" action="https://script.google.com/macros/s/AKfycbz3vrvsQAFoIqHXN1W4D41WqqbXs3Z7-IVhGuMvoSEueWNfyEZsKbc8z8WaPRiRCfhuwg/exec" method="POST" target="_blank" onsubmit="handleFormSubmit()">
+          <input type="hidden" name="payload" id="payloadInput">
+          <button type="submit" class="btn-submit" id="submitBtn">スプレッドシートを作成する</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Success View -->
+    <div class="success-view" id="success-view">
+      <div class="success-icon">✅</div>
+      <h3>処理を開始しました</h3>
+      <div class="auth-warning">
+        <strong>⚠️ 初回アクセスの場合</strong><br>
+        別タブでGoogleの承認画面が表示されたら許可してください。許可直後はデータが送られないため、タブを閉じて下のボタンで再実行してください。
+      </div>
+      <button class="btn-retry" onclick="resetView()">もう一度実行する</button>
+      <a href="https://docs.google.com/spreadsheets" target="_blank" class="btn-open">Google スプレッドシートを開く</a>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // Geminiが抽出・生成するスプレッドシートデータ
+    // ----------------------------------------------------
+    let extractedData = {
+      action: "create_spreadsheet",
+      sheetName: "新規スプレッドシート",
+      spreadsheetId: "",
+      targetSheet: "",
+      headers: ["列A", "列B", "列C"],
+      rows: [
+        ["", "", ""]
+      ]
+    };
+
+    let currentTab = "create";
+
+    // --- Tab切替 ---
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', ['create','read','update'][i] === tab);
+      });
+
+      const idSection = document.getElementById('idInputSection');
+      const submitBtn = document.getElementById('submitBtn');
+
+      if (tab === 'create') {
+        extractedData.action = 'create_spreadsheet';
+        idSection.style.display = 'none';
+        submitBtn.textContent = 'スプレッドシートを作成する';
+      } else if (tab === 'read') {
+        extractedData.action = 'read_spreadsheet';
+        idSection.style.display = 'block';
+        submitBtn.textContent = 'スプレッドシートを読み込む';
+      } else {
+        extractedData.action = 'update_spreadsheet';
+        idSection.style.display = 'block';
+        submitBtn.textContent = 'スプレッドシートを更新する';
+      }
+    }
+
+    // --- Sync functions ---
+    function syncSheetName() {
+      extractedData.sheetName = document.getElementById('sheetNameInput').value;
+    }
+    function syncSpreadsheetId() {
+      extractedData.spreadsheetId = document.getElementById('spreadsheetIdInput').value;
+    }
+    function syncTargetSheet() {
+      extractedData.targetSheet = document.getElementById('targetSheetInput').value;
+    }
+
+    // --- Headers ---
+    function renderHeaders() {
+      const container = document.getElementById('headersRow');
+      container.innerHTML = '';
+      extractedData.headers.forEach((h, i) => {
+        container.innerHTML += `
+          <div class="header-chip">
+            <input type="text" value="${h}" onchange="updateHeader(${i}, this.value)" style="width:${Math.max(60, h.length * 12)}px">
+            <button class="chip-remove" onclick="removeHeader(${i})">×</button>
+          </div>
+        `;
+      });
+      container.innerHTML += `<button class="btn-add-header" onclick="addHeader()">+ 列追加</button>`;
+      renderTable();
+    }
+
+    function updateHeader(index, value) {
+      extractedData.headers[index] = value;
+      renderTable();
+    }
+
+    function addHeader() {
+      const newName = "列" + String.fromCharCode(65 + extractedData.headers.length);
+      extractedData.headers.push(newName);
+      // 既存の行に空セルを追加
+      extractedData.rows.forEach(row => row.push(""));
+      renderHeaders();
+    }
+
+    function removeHeader(index) {
+      if (extractedData.headers.length <= 1) {
+        alert("最低1列は必要です。");
+        return;
+      }
+      extractedData.headers.splice(index, 1);
+      extractedData.rows.forEach(row => row.splice(index, 1));
+      renderHeaders();
+    }
+
+    // --- Table ---
+    function renderTable() {
+      const thead = document.getElementById('tableHead');
+      const tbody = document.getElementById('tableBody');
+      const colCount = extractedData.headers.length;
+
+      // Header
+      let headHtml = '<tr><th>#</th>';
+      extractedData.headers.forEach(h => {
+        headHtml += `<th>${h}</th>`;
+      });
+      headHtml += '<th></th></tr>';
+      thead.innerHTML = headHtml;
+
+      // Body
+      tbody.innerHTML = '';
+      extractedData.rows.forEach((row, ri) => {
+        let rowHtml = `<tr><td>${ri + 1}</td>`;
+        for (let ci = 0; ci < colCount; ci++) {
+          const val = row[ci] !== undefined ? row[ci] : "";
+          rowHtml += `<td><input type="text" value="${val}" onchange="updateCell(${ri},${ci},this.value)"></td>`;
+        }
+        rowHtml += `<td><button class="btn-row-delete" onclick="deleteRow(${ri})">🗑</button></td></tr>`;
+        tbody.innerHTML += rowHtml;
+      });
+
+      document.getElementById('rowCount').textContent = `${extractedData.rows.length} 行`;
+    }
+
+    function updateCell(row, col, value) {
+      extractedData.rows[row][col] = value;
+    }
+
+    function addRow() {
+      const emptyRow = extractedData.headers.map(() => "");
+      extractedData.rows.push(emptyRow);
+      renderTable();
+      // Scroll to bottom
+      const wrapper = document.querySelector('.table-scroll');
+      wrapper.scrollTop = wrapper.scrollHeight;
+    }
+
+    function deleteRow(index) {
+      if (extractedData.rows.length <= 1) {
+        alert("最低1行は必要です。");
+        return;
+      }
+      extractedData.rows.splice(index, 1);
+      renderTable();
+    }
+
+    // --- Submit ---
+    function handleFormSubmit() {
+      // 入力からデータを最終同期
+      syncSheetName();
+      if (currentTab !== 'create') {
+        syncSpreadsheetId();
+        syncTargetSheet();
+      }
+      document.getElementById('payloadInput').value = JSON.stringify(extractedData);
+
+      setTimeout(() => {
+        document.getElementById('editor-view').style.display = 'none';
+        document.getElementById('success-view').style.display = 'block';
+      }, 500);
+    }
+
+    function resetView() {
+      document.getElementById('editor-view').style.display = 'block';
+      document.getElementById('success-view').style.display = 'none';
+    }
+
+    // --- Init ---
+    function initUI() {
+      document.getElementById('sheetNameInput').value = extractedData.sheetName;
+      document.getElementById('spreadsheetIdInput').value = extractedData.spreadsheetId || '';
+      document.getElementById('targetSheetInput').value = extractedData.targetSheet || '';
+
+      // Tab設定
+      if (extractedData.action === 'read_spreadsheet') switchTab('read');
+      else if (extractedData.action === 'update_spreadsheet') switchTab('update');
+      else switchTab('create');
+
+      renderHeaders();
+    }
+
+    window.onload = function() {
+      if (typeof window.INITIAL_DATA !== 'undefined') {
+        extractedData = window.INITIAL_DATA;
+      }
+      initUI();
+    };
+  </script>
+</body>
+</html>
